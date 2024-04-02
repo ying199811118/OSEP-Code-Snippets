@@ -1,4 +1,4 @@
-# Active Directory Exploitation
+# Active Directory Cheat Sheet
 
 ## AD Object Security Permission
 ### Check Generic All
