@@ -1,5 +1,12 @@
 # Active Directory Cheat Sheet
 
+## BloodHound
+```powershell
+neo4j console
+. .\Downloads\SharpHound.ps1
+Invoke-Bloodhound -CollectionMethod All -Domain XXX.local -ZipFileName loot.zip
+```
+
 ## AD Object Security Permission
 ### Check Generic All
 **Logic**: Use GenericAll permission → modify related password to gain access
