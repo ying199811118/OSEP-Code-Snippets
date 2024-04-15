@@ -1,3 +1,8 @@
+# Go Buster
+```bash
+gobuster dir -e -u http://192.168.120.132/ -w /usr/share/wordlists/dirb/common.txt
+```
+
 # Windows AV
 
 ```powershell
