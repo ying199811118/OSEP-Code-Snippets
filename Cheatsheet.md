@@ -1,3 +1,17 @@
+# Metasploit Autoroute
+```bash
+use post/multi/manage/autoroute
+set subnet 172.16.216.0
+set session 15
+run
+use server/socks_proxy
+route
+set srvport 8080
+set version 4a
+set srvhost 0.0.0.0
+run
+```
+
 # Go Buster
 ```bash
 gobuster dir -e -u http://192.168.120.132/ -w /usr/share/wordlists/dirb/common.txt
